@@ -1,33 +1,57 @@
 #include <iostream>
 #include "Window.h"
 #include "WindowSDL.h"
-
-#include <SDL2/SDL.h>
+#include "Renderer.h"
+#include "RendererSDL.h"
+#include "Color.h"
+#include "Font.h"
+#include "FontSDL.h"
+#include "Text.h"
+#include "TextSDL.h"
+#include "TerminalBuffer.h"
+#include "Terminal.h"
 
 int main(int argc, char** argv)
 {
-	Window * window = new WindowSDL("Command Prompt", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 600, false);
-	window->Create();
-	window->m_TestEvent.AddListener([] { std::cout << "HELLO WORLD!" << std::endl; });
-	window->m_TestEvent.Invoke();
-
 	bool done = false;
+	bool redraw = true;
+	Window * window = new WindowSDL("Command Prompt", -1, -1, 640, 480, false);
+	window->Create();
+	window->OnWindowClosed.AddListener([&done]() { done = true; });
+	//window->OnKeyDown.AddListener([](char key, unsigned int timestamp) { std::cout << "[OnKeyDown]" << key << " (" << (int)key << ") @" << timestamp << std::endl; });
+
+	window->OnMouseEnterWindow.AddListener([&redraw]() { redraw = true; });
+	window->OnWindowFocusGained.AddListener([&redraw]() { redraw = true; });
+	window->OnWindowExposed.AddListener([&redraw]() { redraw = true; });
+	window->OnWindowShown.AddListener([&redraw]() { redraw = true; });
+	window->OnWindowMoved.AddListener([&redraw](int, int, int, int) { redraw = true; });
+	window->OnWindowResized.AddListener([&redraw](int, int, int, int) { redraw = true; });
+	window->OnWindowMaximized.AddListener([&redraw]() { redraw = true; });
+	window->OnWindowRestored.AddListener([&redraw]() { redraw = true; });
+
+	Renderer * renderer = new RendererSDL((WindowSDL *)window);
+
+	Font * font = new FontSDL("C:/Users/james_D/Git/Homemade_CommandPrompt/CommandPrompt/resources/consola.ttf", 14);
+	glm::vec2 monoCharSize;
+	font->GetCharacterSize('0', monoCharSize);
+
+	Terminal * terminal = new Terminal(window, 0, font);
 
 	while (!done)
 	{
-		SDL_Event event;
-		while (SDL_PollEvent(&event))
+		while (window->PollEvent());
+
+		if (redraw)
 		{
-			switch (event.type)
-			{
-			case SDL_QUIT:
-				done = true;
-				break;
-			}
+			terminal->Draw(renderer);
+
+			renderer->Render();
 		}
 	}
 
-	window->m_TestEvent.Invoke();
+	delete(terminal);
+	delete(font);
+	delete(renderer);
 	delete(window);
 
     return 0;

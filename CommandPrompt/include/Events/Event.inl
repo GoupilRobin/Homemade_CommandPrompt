@@ -1,6 +1,8 @@
 #ifndef Event_inl_
 #define Event_inl_
 
+#include "Event.h"
+
 /*
 * Event<Args...>
 */
